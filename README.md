@@ -4,6 +4,7 @@ This repository contains implementations of two different language models: a cha
 
 ## Project Structure
 
+```
 .
 ├── simple_llm.py        # LSTM-based language model
 ├── transformer_llm.py   # Transformer-based language model
