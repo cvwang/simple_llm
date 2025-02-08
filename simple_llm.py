@@ -32,11 +32,14 @@ class SimpleCharLLM(nn.Module):
 
 # Example usage
 def main():
-    # Sample text for training
+    # Larger, more structured training text
     text = """
-    Hello, this is a simple example text.
-    We're training a tiny language model.
-    It will learn to predict characters!
+    The quick brown fox jumps over the lazy dog. 
+    Machine learning is a fascinating field of study.
+    Neural networks can learn patterns in data.
+    Language models help us generate human-like text.
+    Artificial intelligence continues to evolve rapidly.
+    Deep learning has revolutionized natural language processing.
     """
     
     # Create character to index mapping
@@ -44,10 +47,10 @@ def main():
     char_to_idx = {ch: i for i, ch in enumerate(chars)}
     idx_to_char = {i: ch for i, ch in enumerate(chars)}
     
-    # Model parameters
+    # Increased model parameters
     input_size = len(chars)
-    hidden_size = 128
-    num_layers = 2
+    hidden_size = 256  # Increased from 128
+    num_layers = 3    # Increased from 2
     output_size = len(chars)
     
     # Create model
@@ -62,28 +65,33 @@ def main():
             tensor[i][0][char_to_idx[char]] = 1
         return tensor
     
-    # Training loop
-    num_epochs = 100
-    sequence_length = 25
+    # Increased training epochs
+    num_epochs = 500  # Increased from 100
+    
+    # Modified training loop with sequence batching
+    sequence_length = 50  # Increased context window
     
     for epoch in range(num_epochs):
         model.zero_grad()
-        loss = 0
+        total_loss = 0
         
-        input_seq = text_to_tensor(text[:-1], char_to_idx)
-        target_seq = torch.LongTensor([char_to_idx[char] for char in text[1:]])
+        # Create training sequences
+        for i in range(0, len(text) - sequence_length, sequence_length):
+            input_seq = text_to_tensor(text[i:i + sequence_length], char_to_idx)
+            target_seq = torch.LongTensor([char_to_idx[char] for char in text[i + 1:i + sequence_length + 1]])
+            
+            output, hidden = model(input_seq)
+            loss = criterion(output.view(-1, len(chars)), target_seq)
+            total_loss += loss.item()
+            
+            loss.backward()
+            optimizer.step()
         
-        output, hidden = model(input_seq)
-        loss = criterion(output.view(-1, len(chars)), target_seq)
-        
-        loss.backward()
-        optimizer.step()
-        
-        if epoch % 10 == 0:
-            print(f'Epoch {epoch}, Loss: {loss.item():.4f}')
+        if epoch % 50 == 0:  # Changed from 10
+            print(f'Epoch {epoch}, Average Loss: {total_loss:.4f}')
     
     # Generate some text
-    def generate_text(model, start_char, char_to_idx, idx_to_char, length=100):
+    def generate_text(model, start_char, char_to_idx, idx_to_char, length=100, temperature=0.8):
         model.eval()
         current_char = start_char
         generated_text = current_char
@@ -93,17 +101,23 @@ def main():
             input_tensor = text_to_tensor(current_char, char_to_idx)
             output, hidden = model(input_tensor, hidden)
             
-            # Sample from the output distribution
-            probs = torch.softmax(output[-1], dim=1)
+            # Apply temperature scaling
+            output = output[-1].div(temperature)
+            probs = torch.softmax(output, dim=1)
+            
+            # Sample with higher probability for more likely characters
             char_idx = torch.multinomial(probs, 1).item()
             current_char = idx_to_char[char_idx]
             generated_text += current_char
         
         return generated_text
 
-    # Generate sample text
-    print("\nGenerated text:")
-    print(generate_text(model, 'H', char_to_idx, idx_to_char))
+    # Generate multiple samples with different temperatures
+    print("\nGenerated text (temperature=0.5, more focused):")
+    print(generate_text(model, 'T', char_to_idx, idx_to_char, temperature=0.5))
+    
+    print("\nGenerated text (temperature=1.0, more creative):")
+    print(generate_text(model, 'T', char_to_idx, idx_to_char, temperature=1.0))
 
 if __name__ == "__main__":
     main() 
