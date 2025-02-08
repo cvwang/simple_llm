@@ -4,7 +4,6 @@ import torch.optim as optim
 import numpy as np
 import os
 
-
 # Define a simple character-level language model
 class SimpleCharLLM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, output_size, dropout=0.2):
@@ -12,6 +11,7 @@ class SimpleCharLLM(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
+        # This is an LSTM architecture
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, 
                            batch_first=True, dropout=dropout)
         self.dropout = nn.Dropout(dropout)
